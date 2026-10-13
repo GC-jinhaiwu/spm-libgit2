@@ -6,3 +6,7 @@
 CMakeSettings.json
 .vs
 .idea
+
+# Swift Package Manager (see SPM.md)
+.build/
+.swiftpm/

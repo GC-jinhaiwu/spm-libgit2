@@ -1,0 +1,77 @@
+name: Swift Package
+
+# Builds the XCFrameworks, publishes them as a GitHub release and records
+# the release in Package.swift on the branch the workflow was started from.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag. Empty uses LIBGIT2_VERSION from include/git2/version.h.
+        required: false
+
+permissions:
+  contents: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Pick the release tag
+        id: tag
+        run: |
+          tag='${{ inputs.version }}'
+          if [ -z "$tag" ]; then
+            tag=$(sed -n 's/^#define LIBGIT2_VERSION[[:space:]]*"\(.*\)"/\1/p' include/git2/version.h)
+          fi
+          if [ -z "$tag" ]; then
+            echo "::error::no version given and include/git2/version.h has no LIBGIT2_VERSION"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "::error::tag $tag already exists; pass a different version"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build the XCFrameworks
+        run: script/spm/build.sh all
+
+      - name: Keep the build logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs
+          path: build/spm/logs/
+
+      - name: Keep the zips
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcframeworks
+          path: build/spm/dist/*.zip
+
+      - name: Record the release in Package.swift
+        run: |
+          script/spm/build.sh manifest '${{ steps.tag.outputs.tag }}'
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add Package.swift
+          git commit -m 'spm: release ${{ steps.tag.outputs.tag }}'
+          git pull --rebase origin '${{ github.ref_name }}'
+          git tag '${{ steps.tag.outputs.tag }}'
+          git push --atomic origin 'HEAD:${{ github.ref_name }}' '${{ steps.tag.outputs.tag }}'
+
+      - name: Publish the release
+        run: |
+          notes=$(printf 'libgit2 %s\n\n%s\n' '${{ steps.tag.outputs.tag }}' "$(git submodule status | awk '{ print $2, $3 }')")
+          gh release create '${{ steps.tag.outputs.tag }}' --verify-tag \
+            --title '${{ steps.tag.outputs.tag }}' --notes "$notes" \
+            build/spm/dist/Clibgit2.zip build/spm/dist/libssh2.zip \
+            build/spm/dist/libssl.zip build/spm/dist/libcrypto.zip
