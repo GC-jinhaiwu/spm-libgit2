@@ -20,9 +20,9 @@ let package = Package(
         .library(name: "libgit2", targets: ["Clibgit2", "libssh2", "libssl", "libcrypto"]),
     ],
     targets: [
-        prebuilt("Clibgit2", checksum: "cc55333e6ad2c92652d6fe8f40440882c55f80b747c00078593f5aa37299a32a"),
-        prebuilt("libssh2", checksum: "8e4190d12cad793741be167c3376fd3c460916fef61d93766844bf7d4795ab99"),
-        prebuilt("libssl", checksum: "062acaf4dd84e114e50225cd1b7b2df2a73ac004b1a92dcb67714f6ef91f8c88"),
-        prebuilt("libcrypto", checksum: "f5a92b5522bb9ff2eef15ffa3cab8715fde56540dc9e21b45abfc58a2bac5f17"),
+        prebuilt("Clibgit2", checksum: "dbfebb0518f656de10e42a408dde08004904e347514c0195c41e7f06b1cebf36"),
+        prebuilt("libssh2", checksum: "b561bca751d092d2459c23f9283ed5ba36313a4f0f0a64eb212379e14e9ce39a"),
+        prebuilt("libssl", checksum: "5a1e1a037b66e087607c07217f7feef34e2220c0b55c78ee8cb758de21e2d50d"),
+        prebuilt("libcrypto", checksum: "1a5cbbdab20d2699e2e2a4b717b9f28d7f520ae9b7ce1dbea2e2f5a2b0d8df40"),
     ]
 )
